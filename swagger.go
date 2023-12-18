@@ -6,6 +6,7 @@ import (
 	"mime"
 	"net/http"
 	"os"
+	"strings"
 )
 
 var FS embed.FS
@@ -27,7 +28,7 @@ func Handler(pathToSpec string) http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == swaggerPath {
+		if strings.HasSuffix(r.URL.Path, swaggerPath) {
 			http.ServeFile(w, r, pathToSpec)
 		}
 		http.FileServer(http.FS(swaggerUI)).ServeHTTP(w, r)
