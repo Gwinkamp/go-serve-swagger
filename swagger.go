@@ -1,13 +1,18 @@
 package swagger
 
 import (
+	"embed"
 	"fmt"
 	"github.com/gorilla/mux"
+	"io/fs"
 	"net/http"
 	"os"
 )
 
-var Router *mux.Router
+var (
+	Router *mux.Router
+	FS     embed.FS
+)
 
 // New создает новый маршрутизатор для swagger-ui
 func New(specPath string, swaggerPath string) *mux.Router {
@@ -16,7 +21,13 @@ func New(specPath string, swaggerPath string) *mux.Router {
 	}
 
 	Router = mux.NewRouter()
-	fs := http.FileServer(http.Dir("swagger-ui"))
+
+	fileSys, err := fs.Sub(FS, "swagger-ui")
+	if err != nil {
+		panic(err)
+	}
+
+	fileServer := http.FileServer(http.FS(fileSys))
 
 	if swaggerPath == "" {
 		swaggerPath = "/swagger"
@@ -24,7 +35,7 @@ func New(specPath string, swaggerPath string) *mux.Router {
 
 	Router.Handle(
 		fmt.Sprintf("%s/", swaggerPath),
-		http.StripPrefix(swaggerPath, fs),
+		http.StripPrefix(swaggerPath, fileServer),
 	).Methods(http.MethodGet)
 
 	Router.HandleFunc("/swagger.json", func(w http.ResponseWriter, r *http.Request) {
