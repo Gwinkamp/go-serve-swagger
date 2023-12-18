@@ -22,14 +22,13 @@ func Handler(pathToSpec string) http.HandlerFunc {
 
 	_ = mime.AddExtensionType(".svg", "image/svg+xml")
 
-	swaggerUI, err := fs.Sub(FS, "swagger-ui")
-	if err != nil {
-		panic(err)
-	}
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, swaggerPath) {
 			http.ServeFile(w, r, pathToSpec)
+		}
+		swaggerUI, err := fs.Sub(FS, "swagger-ui")
+		if err != nil {
+			panic(err)
 		}
 		http.FileServer(http.FS(swaggerUI)).ServeHTTP(w, r)
 	}
