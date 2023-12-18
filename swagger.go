@@ -25,7 +25,7 @@ func New(specPath string) *http.ServeMux {
 
 	fileServer := http.FileServer(http.FS(fileSys))
 
-	mux.Handle("/swagger/", http.StripPrefix("/swagger", fileServer))
+	mux.Handle("/", fileServer)
 
 	mux.HandleFunc("/swagger.json", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, specPath)
