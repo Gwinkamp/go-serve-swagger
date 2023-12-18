@@ -1,0 +1,35 @@
+package swagger
+
+import (
+	"embed"
+	"io/fs"
+	"mime"
+	"net/http"
+	"os"
+)
+
+var FS embed.FS
+
+// route запроса на получение спецификации swagger в формате json
+const swaggerPath = "/swagger.json"
+
+// Handler формирует http.HandlerFunc обработчик запросов на получение спецификации swagger
+func Handler(pathToSpec string) http.HandlerFunc {
+	if _, err := os.Stat(pathToSpec); os.IsNotExist(err) {
+		panic(err)
+	}
+
+	_ = mime.AddExtensionType(".svg", "image/svg+xml")
+
+	swaggerUI, err := fs.Sub(FS, "swagger-ui")
+	if err != nil {
+		panic(err)
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == swaggerPath {
+			http.ServeFile(w, r, pathToSpec)
+		}
+		http.FileServer(http.FS(swaggerUI)).ServeHTTP(w, r)
+	}
+}

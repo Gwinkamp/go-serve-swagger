@@ -1,2 +1,3 @@
-# go-serve-swagger
-golang mixin for swagger ui
+# Go serve swagger
+
+обработчик http запросов на на получение спецификации swagger
