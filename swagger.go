@@ -9,10 +9,8 @@ import (
 	"os"
 )
 
-var (
-	Router *mux.Router
-	FS     embed.FS
-)
+//go:embed swagger-ui
+var FS embed.FS
 
 // New создает новый маршрутизатор для swagger-ui
 func New(specPath string, swaggerPath string) *mux.Router {
@@ -20,7 +18,7 @@ func New(specPath string, swaggerPath string) *mux.Router {
 		panic(err)
 	}
 
-	Router = mux.NewRouter()
+	router := mux.NewRouter()
 
 	fileSys, err := fs.Sub(FS, "swagger-ui")
 	if err != nil {
@@ -33,14 +31,14 @@ func New(specPath string, swaggerPath string) *mux.Router {
 		swaggerPath = "/swagger"
 	}
 
-	Router.Handle(
+	router.Handle(
 		fmt.Sprintf("%s/", swaggerPath),
 		http.StripPrefix(swaggerPath, fileServer),
 	).Methods(http.MethodGet)
 
-	Router.HandleFunc("/swagger.json", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/swagger.json", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, specPath)
 	})
 
-	return Router
+	return router
 }
