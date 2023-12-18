@@ -2,21 +2,28 @@ package swagger
 
 import (
 	"embed"
+	"io"
 	"io/fs"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 //go:embed swagger-ui
 var FS embed.FS
 
-// New создает новый маршрутизатор для swagger-ui
-func New(specPath string) *http.ServeMux {
-	if _, err := os.Stat(specPath); os.IsNotExist(err) {
+// Handler создает обработчик запросов для получения swagger документации
+func Handler(specPath string) http.HandlerFunc {
+	specFile, err := os.Open(specPath)
+	if err != nil {
 		panic(err)
 	}
+	defer specFile.Close()
 
-	mux := http.NewServeMux()
+	spec, err := io.ReadAll(specFile)
+	if err != nil {
+		panic(err)
+	}
 
 	fileSys, err := fs.Sub(FS, "swagger-ui")
 	if err != nil {
@@ -25,11 +32,13 @@ func New(specPath string) *http.ServeMux {
 
 	fileServer := http.FileServer(http.FS(fileSys))
 
-	mux.Handle("/", fileServer)
-
-	mux.HandleFunc("/swagger.json", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, specPath)
-	})
-
-	return mux
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/swagger.json" {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Content-Length", strconv.Itoa(len(spec)))
+			w.Write(spec)
+			return
+		}
+		fileServer.ServeHTTP(w, r)
+	}
 }
